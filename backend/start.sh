@@ -1,7 +1,16 @@
-#!/usr/bin/env bash
+#!/usr/local/bin/bash
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd "$SCRIPT_DIR" || exit
+
+# Activate the virtual environment
+if [ -d "./.venv" ]; then
+  echo "Activating virtual environment..."
+  source ./.venv/bin/activate
+else
+  echo "Error: Virtual environment not found in $SCRIPT_DIR/.venv"
+  exit 1
+fi
 
 KEY_FILE=.webui_secret_key
 
