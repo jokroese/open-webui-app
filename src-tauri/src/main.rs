@@ -9,7 +9,7 @@ use tauri_plugin_log::Builder as LogBuilder;
 fn start_backend() -> std::process::Child {
     let backend_path = env::current_dir()
         .expect("Failed to get current directory")
-        .join("../backend/start.sh");
+        .join("/../backend/start.sh");
 
     let max_retries = 3;
     for attempt in 1..=max_retries {
@@ -57,7 +57,18 @@ fn check_backend_health() -> bool {
     false
 }
 
-fn start_ollama_loop(ollama_path: String) {
+fn is_ollama_running() -> bool {
+    match std::net::TcpStream::connect("127.0.0.1:11434") {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
+
+fn ensure_ollama_running(ollama_path: String) {
+    if is_ollama_running() {
+        println!("✅ Ollama is already running. Skipping startup.");
+        return;
+    }
     thread::spawn(move || loop {
         println!("Starting Ollama...");
 
@@ -116,7 +127,7 @@ fn main() {
             match detect_ollama() {
                 Some(ollama_path) => {
                     info!("Using Ollama at: {}", ollama_path);
-                    start_ollama_loop(ollama_path);
+                    ensure_ollama_running(ollama_path);
                 }
                 None => {
                     error!("Ollama not found.");
