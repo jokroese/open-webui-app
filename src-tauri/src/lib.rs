@@ -3,10 +3,13 @@ pub fn run() {
     use log::{error, info};
     use tauri::{Manager, RunEvent};
     use tauri_plugin_log::Builder as LogBuilder;
+    use tauri_plugin_opener::init as OpenerInit;
 
     info!("🚀 Starting Open WebUI...");
 
     let app = tauri::Builder::default()
+        // open files with the default system application
+        .plugin(OpenerInit())
         // structured logging
         .plugin(LogBuilder::default().level(log::LevelFilter::Debug).build())
         .setup(|app| {
