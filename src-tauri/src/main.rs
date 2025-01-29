@@ -6,7 +6,7 @@ use std::{env, thread};
 fn start_backend() -> std::process::Child {
     let backend_path = env::current_dir()
         .expect("Failed to get current directory")
-        .join("backend/start.sh");
+        .join("../backend/start.sh");
 
     Command::new("bash")
         .arg(
