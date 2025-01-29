@@ -12,6 +12,15 @@ pub fn run() {
         .setup(|app| {
             info!("🔄 Running setup phase...");
 
+            // show window when available
+            if let Some(main_window) = app.get_webview_window("main") {
+                if let Err(err) = main_window.show() {
+                    error!("❌ Failed to show main window: {}", err);
+                }
+            } else {
+                error!("❌ Could not retrieve main window.");
+            }
+
             Ok(())
         })
         .build(tauri::generate_context!())
