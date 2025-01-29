@@ -1,7 +1,7 @@
 use reqwest::blocking::get;
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use std::{env, thread};
 
 fn start_backend() -> std::process::Child {
@@ -9,28 +9,48 @@ fn start_backend() -> std::process::Child {
         .expect("Failed to get current directory")
         .join("../backend/start.sh");
 
-    Command::new("bash")
-        .arg(
-            backend_path
-                .to_str()
-                .expect("Failed to convert path to string"),
-        )
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .spawn()
-        .expect("Failed to start backend")
+    let max_retries = 3;
+    for attempt in 1..=max_retries {
+        println!("Starting backend (Attempt {}/{})...", attempt, max_retries);
+
+        let process = Command::new("bash")
+            .arg(backend_path.to_str().expect("Failed to convert path"))
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .spawn();
+
+        if let Ok(child) = process {
+            return child;
+        }
+
+        eprintln!("Backend failed to start. Retrying...");
+        thread::sleep(Duration::from_secs(5));
+    }
+
+    eprintln!("❌ Backend failed after {} attempts.", max_retries);
+    std::process::exit(1);
 }
 
 fn check_backend_health() -> bool {
     let health_url = "http://localhost:8080/health";
-    for _ in 0..10 {
+    let max_wait_time = Duration::from_secs(60);
+    let start_time = Instant::now();
+
+    print!("Waiting for backend to start... ");
+
+    while start_time.elapsed() < max_wait_time {
         if let Ok(response) = get(health_url) {
             if response.status().is_success() {
+                println!("✅ Backend is ready!");
                 return true;
             }
         }
+        print!(".");
+        std::io::Write::flush(&mut std::io::stdout()).unwrap();
         thread::sleep(Duration::from_secs(1));
     }
+
+    eprintln!("\n❌ Backend took too long to start. Check logs for issues.");
     false
 }
 
@@ -114,6 +134,6 @@ fn main() {
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("error while running tauri application")
+        .expect("error while running Tauri application")
         .run(|_app_handle, _event| {});
 }
