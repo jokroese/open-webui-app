@@ -1,0 +1,55 @@
+# syntax=docker/dockerfile:1
+# Base image with Python & dependencies
+FROM debian:bookworm AS builder
+
+# Install necessary system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    clang \
+    cmake \
+    git \
+    patch \
+    python3 \
+    python3-pip \
+    libssl-dev \
+    libxml2-dev \
+    zlib1g-dev \
+    curl \
+    xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install OSXCross
+WORKDIR /osxcross
+RUN git clone --depth=1 https://github.com/tpoechtrager/osxcross.git /osxcross && \
+    cd /osxcross && \
+    curl -O https://github.com/tpoechtrager/osxcross/releases/download/v2022-04-03/MacOSX11.3.sdk.tar.xz && \
+    mv MacOSX11.3.sdk.tar.xz tarballs/ && \
+    UNATTENDED=1 ./build.sh
+
+# Add OSXCross to PATH
+ENV PATH="/osxcross/target/bin:$PATH"
+
+# Set OSXCross target
+ENV MACOSX_DEPLOYMENT_TARGET=11.0
+ENV CC=aarch64-apple-darwin20-clang
+ENV CXX=aarch64-apple-darwin20-clang++
+
+# Create working directory for the build
+WORKDIR /app/backend
+
+# Install Hatch and uv
+RUN python3 -m pip install hatch uv
+
+# Copy backend code
+COPY ./backend .
+
+# Build the binary with PyInstaller using OSXCross
+RUN uvx pyinstaller \
+    --name open-webui-backend \
+    --noconfirm --onefile \
+    --add-data 'data:data' \
+    open_webui/main.py
+
+# Final stage: Extract macOS M1 binary
+FROM alpine:latest AS artifact
+COPY --from=builder /app/backend/dist/open-webui-backend .
