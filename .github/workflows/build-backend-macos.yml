@@ -28,7 +28,7 @@ jobs:
           uvx pyinstaller \
             --name open-webui-backend \
             --noconfirm --onefile \
-            --add-data 'data:data' \
+            --add-data 'backend/data:backend/data' \
             backend/open_webui/main.py
 
       - name: Upload macOS Binary
