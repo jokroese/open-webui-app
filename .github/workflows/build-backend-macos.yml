@@ -29,7 +29,7 @@ jobs:
             --name open-webui-backend \
             --noconfirm --onefile \
             --add-data 'data:data' \
-            open_webui/main.py
+            backend/open_webui/main.py
 
       - name: Upload macOS Binary
         uses: actions/upload-artifact@v4
