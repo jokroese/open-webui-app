@@ -22,7 +22,8 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install hatch uv pyinstaller
-          uv pip install .
+          hatch env create
+          hatch run pip install .
 
       - name: Build Executable
         run: |
