@@ -25,7 +25,7 @@ jobs:
           hatch env create
           hatch run pip install .
 
-       - name: Build Executable
+      - name: Build Executable
         run: |
           hatch run pyinstaller \
             --name open-webui-backend \
