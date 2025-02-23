@@ -21,7 +21,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install hatch uv pyinstaller
+          pip install hatch uv
           hatch env create
           hatch run pip install .
 
@@ -31,6 +31,7 @@ jobs:
             --name open-webui-backend \
             --noconfirm --onefile \
             --add-data 'backend/data:backend/data' \
+            --add-data 'CHANGELOG.md:backend/open_webui' \
             backend/open_webui/main.py
 
       - name: Upload macOS Binary
