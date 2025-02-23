@@ -1,0 +1,41 @@
+name: Build macOS M1 Executable
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-backend-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install hatch uv
+          hatch env create
+          hatch run pip install .
+
+      - name: Build Executable
+        run: |
+          hatch run pyinstaller \
+            --name open-webui-backend \
+            --noconfirm --onefile \
+            --add-data 'backend/data:backend/data' \
+            --add-data "CHANGELOG.md:." \
+            backend/open_webui/main.py
+
+      - name: Upload macOS Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: open-webui-backend-macos
+          path: dist/open-webui-backend
