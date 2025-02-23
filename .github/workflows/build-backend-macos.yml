@@ -31,7 +31,7 @@ jobs:
             --name open-webui-backend \
             --noconfirm --onefile \
             --add-data 'backend/data:backend/data' \
-            --add-data 'CHANGELOG.md:backend/open_webui' \
+            --add-data "../CHANGELOG.md:." \
             backend/open_webui/main.py
 
       - name: Upload macOS Binary
