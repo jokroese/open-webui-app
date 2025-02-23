@@ -25,9 +25,9 @@ jobs:
           hatch env create
           hatch run pip install .
 
-      - name: Build Executable
+       - name: Build Executable
         run: |
-          uvx pyinstaller \
+          hatch run pyinstaller \
             --name open-webui-backend \
             --noconfirm --onefile \
             --add-data 'backend/data:backend/data' \
