@@ -221,3 +221,81 @@ If you have any questions, suggestions, or need assistance, please open an issue
 ---
 
 Created by [Timothy Jaeryang Baek](https://github.com/tjbck) - Let's make Open WebUI even more amazing together! 💪
+
+## Build
+
+```
+uv run pyinstaller \
+  --onefile \
+  --clean \
+  --name=open-webui \
+  --add-data=CHANGELOG.md:open_webui \
+  --add-data=backend/open_webui/internal/migrations:open_webui/internal/migrations \
+  --add-data=backend/open_webui/migrations:open_webui/migrations \
+  backend/start_open_webui.py
+```
+
+Then create folder for the data to be stored:
+
+```
+mkdir -p /Users/jo/open-webui-data
+```
+
+Then run with:
+
+```
+DATA_DIR=/Users/jo/open-webui-data \
+RAG_EMBEDDING_ENGINE="" \
+RAG_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2 \
+./dist/open-webui
+```
+
+Now we're moving to the spec file approach:
+
+```
+uv run pyinstaller open-webui.spec --clean
+```
+
+### This
+
+ModuleNotFoundError: No module named '30fcd23745efe32ce681\_\_mypyc'
+
+mypyc compiles some Python modules into C.
+
+pyinstaller fails to detect and include
+
+we need to either reinstall them from source or make sure the binaries are there
+
+reinstall from source:
+
+```
+uv pip uninstall pydantic orjson
+uv pip install pydantic --no-binary pydantic
+uv pip install orjson --no-binary orjson
+```
+
+or `uv pip install --no-binary :all:`
+
+but this will reduce performance.
+
+So it's better to include them in the spec with collect_submodules, collect_data_files collect_dynamic_libs.
+
+# Now
+
+Run: `uv run pyinstaller --workpath _pyi_build --distpath dist open-webui.spec`
+
+this makes pyinstaller use _pyi_build, instead of it's default of build, which overlaps with where SvelteKit builds to.
+
+<!-- # TODO: Investigate and clean up WebSocket middleware handling
+# Currently, this middleware attempts to validate WebSocket upgrade headers 
+# to work around an upstream issue: 
+# https://github.com/miguelgrinberg/python-engineio/issues/367
+# 
+# This results in occasional "No response returned" runtime errors in logs, 
+# but they do NOT break functionality. Leaving as-is for now, 
+# since everything works and the issue is non-critical.
+#
+# Revisit later to:
+# - Review if upstream issue has been fixed
+# - Refactor middleware / handle exceptions more gracefully
+# - Clean up noisy error logs -->

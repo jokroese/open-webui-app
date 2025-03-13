@@ -5,6 +5,34 @@ import subprocess
 from pathlib import Path
 import base64
 import uvicorn
+import platform
+import multiprocessing
+
+
+def setup_data_dir():
+    """Determine and set DATA_DIR if not already set."""
+    custom_data_dir = os.environ.get("DATA_DIR")
+
+    if custom_data_dir:
+        data_dir = Path(custom_data_dir)
+    else:
+        system = platform.system()
+        if system == "Darwin":  # macOS
+            base_dir = Path.home() / "Library" / "Application Support"
+        elif system == "Windows":
+            base_dir = Path(os.getenv("APPDATA", Path.home()))
+        else:  # Linux and others
+            base_dir = Path.home() / ".local" / "share"
+
+        data_dir = base_dir / "open-webui"
+
+    # Set and ensure the directory exists
+    os.environ["DATA_DIR"] = str(data_dir)
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"[DEBUG] DATA_DIR is set to: {data_dir}")
+
+    return data_dir
 
 
 def generate_secret_key(key_file):
@@ -19,8 +47,26 @@ def generate_secret_key(key_file):
 
 
 def main():
+    multiprocessing.freeze_support()
+
+    setup_data_dir()
+
     script_dir = Path(__file__).parent.resolve()
     os.chdir(script_dir)
+
+    # detect frozen
+    import sys
+
+    if getattr(sys, "frozen", False):
+        frontend_build_dir = Path(sys._MEIPASS) / "build"
+    else:
+        frontend_build_dir = Path(
+            os.getenv("FRONTEND_BUILD_DIR", script_dir.parent / "build")
+        ).resolve()
+
+    os.environ["FRONTEND_BUILD_DIR"] = str(frontend_build_dir)
+
+    print(f"[DEBUG] FRONTEND_BUILD_DIR is set to: {frontend_build_dir}")
 
     # Default values
     port = int(os.environ.get("PORT", 8080))
@@ -57,7 +103,8 @@ def main():
     # Start Uvicorn
     print(f"Starting Open WebUI on {host}:{port}...")
     from open_webui.main import app
-    uvicorn.run(app, host=host, port=port, forwarded_allow_ips='*')
+
+    uvicorn.run(app, host=host, port=port, forwarded_allow_ips="*", workers=1, reload=False)
 
 
 if __name__ == "__main__":
