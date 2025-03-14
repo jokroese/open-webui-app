@@ -320,3 +320,24 @@ prod: `BUILD_MODE=prod uv run pyinstaller --workpath _pyi_build open-webui.spec`
 # Question
 
 Should it be onefile or onedir?
+
+# Refactor to build.py
+
+Can test things with:
+
+- Default (dev + detected platform): `uv run python build.py`
+- Production build for current machine: `uv run python build.py --mode prod`
+- Explicit platform targeting (useful for testing): `uv run python build.py --mode prod --platform linux`
+- Verbose output to see what's happening: `uv run python build.py --mode prod --verbose`
+
+but to run pyinstaller, need the same as above:
+
+dev: `BUILD_MODE=dev uv run pyinstaller --workpath _pyi_build open-webui.spec`
+prod: `BUILD_MODE=prod uv run pyinstaller --workpath _pyi_build open-webui.spec`
+
+# Build executable from build.py
+
+dev: `uv run python build.py`
+prod: `uv run python build.py --mode`
+
+optional: `--verbose` argument.
