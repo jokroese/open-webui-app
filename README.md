@@ -284,18 +284,39 @@ So it's better to include them in the spec with collect_submodules, collect_data
 
 Run: `uv run pyinstaller --workpath _pyi_build --distpath dist open-webui.spec`
 
-this makes pyinstaller use _pyi_build, instead of it's default of build, which overlaps with where SvelteKit builds to.
+this makes pyinstaller use \_pyi_build, instead of it's default of build, which overlaps with where SvelteKit builds to.
 
 <!-- # TODO: Investigate and clean up WebSocket middleware handling
-# Currently, this middleware attempts to validate WebSocket upgrade headers 
-# to work around an upstream issue: 
+# Currently, this middleware attempts to validate WebSocket upgrade headers
+# to work around an upstream issue:
 # https://github.com/miguelgrinberg/python-engineio/issues/367
-# 
-# This results in occasional "No response returned" runtime errors in logs, 
-# but they do NOT break functionality. Leaving as-is for now, 
+#
+# This results in occasional "No response returned" runtime errors in logs,
+# but they do NOT break functionality. Leaving as-is for now,
 # since everything works and the issue is non-critical.
 #
 # Revisit later to:
 # - Review if upstream issue has been fixed
 # - Refactor middleware / handle exceptions more gracefully
 # - Clean up noisy error logs -->
+
+env variables that will be different from default:
+
+WEBUI_NAME: to what we call the app
+ENABLE_SIGNUP=False
+ENABLE_LOGIN_FORM=False
+ENABLE_OAUTH_SIGNUP=False
+DEFAULT_USER_ROLE=admin
+SHOW_ADMIN_DETAILS=False
+
+# Next
+
+Added dev and prod build modes:
+
+dev: `BUILD_MODE=dev uv run pyinstaller --workpath _pyi_build open-webui.spec`
+
+prod: `BUILD_MODE=prod uv run pyinstaller --workpath _pyi_build open-webui.spec`
+
+# Question
+
+Should it be onefile or onedir?

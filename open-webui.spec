@@ -9,8 +9,26 @@ from PyInstaller.utils.hooks import (
 )
 from pathlib import Path
 import site
+import os
+import sys
 
-DEBUG = True
+# Mode selection
+BUILD_MODE = os.environ.get("BUILD_MODE", "dev").lower()
+
+if BUILD_MODE not in ("dev", "prod"):
+    raise ValueError(f"Unknown BUILD_MODE: {BUILD_MODE}")
+
+print(f"[INFO] Building in {BUILD_MODE.upper()} mode")
+
+# Mode-dependent options
+DEBUG = BUILD_MODE == "dev"
+NOARCHIVE = BUILD_MODE == "dev"
+OPTIMIZE = 0 if DEBUG else 2
+CONSOLE = DEBUG
+# STRIP = not DEBUG
+UPX = not DEBUG
+BOOTLOADER_IGNORE_SIGNALS = not DEBUG
+
 
 # Get the first site-packages directory (should be the current venv)
 site_packages_path = next(
@@ -65,6 +83,8 @@ hiddenimports += [
     "encodings.cp1250",
     "ftfy.bad_codecs.sloppy",
     "encodings.aliases",
+    "scipy.special._cdflib",
+    "importlib_resources.trees",
 ]
 
 # Special data
@@ -99,6 +119,46 @@ mypyc_shared_objects = [
 
 binaries += mypyc_shared_objects
 
+# Platform-specific dependencies
+PLATFORM_SPECIFICS = {
+    "darwin": {
+        "excludes": [],
+        "notes": "macOS-specific dependencies go here",
+    },
+    "win32": {
+        "excludes": ["user32", "msvcrt"],
+        "notes": "Windows-specific exclusions",
+    },
+    "linux": {
+        "excludes": ["libc", "libnvidia-ml"],
+        "notes": "Linux-specific exclusions",
+    },
+}
+
+
+def gather_exclusions(current_platform):
+    """
+    Return a list of all excludes not applicable to the current platform.
+    """
+    all_excludes = []
+    for plat, details in PLATFORM_SPECIFICS.items():
+        if plat != current_platform:
+            all_excludes.extend(details.get("excludes", []))
+    return all_excludes
+
+
+current_platform = sys.platform
+if current_platform.startswith("linux"):
+    current_platform = "linux"
+
+if current_platform not in PLATFORM_SPECIFICS:
+    raise RuntimeError(f"Unsupported platform: {current_platform}")
+
+print(f"[INFO] Building for platform: {current_platform}")
+
+excludes = gather_exclusions(current_platform)
+
+print(f"[INFO] Excluding these platform-specific modules: {excludes}")
 
 a = Analysis(
     ["backend/start_open_webui.py"],
@@ -109,9 +169,9 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
-    noarchive=True,
-    optimize=0,
+    excludes=excludes,
+    noarchive=NOARCHIVE,
+    optimize=OPTIMIZE,
 )
 pyz = PYZ(a.pure)
 
@@ -123,15 +183,28 @@ exe = EXE(
     [],
     name="open-webui",
     debug=DEBUG,
-    bootloader_ignore_signals=False,
+    bootloader_ignore_signals=BOOTLOADER_IGNORE_SIGNALS,
     strip=False,
-    upx=False,
+    upx=UPX,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,
+    console=CONSOLE,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+)
+
+print(
+    f"""
+[BUILD SUMMARY]
+Mode: {BUILD_MODE.upper()}
+Platform: {current_platform}
+DEBUG: {DEBUG}
+OPTIMIZE: {OPTIMIZE}
+NOARCHIVE: {NOARCHIVE}
+UPX: {UPX}
+CONSOLE: {CONSOLE}
+"""
 )
